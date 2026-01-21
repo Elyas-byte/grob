@@ -6,17 +6,14 @@ Grob is currently in active development (Alpha phase). Security updates and patc
 
 | Version | Status | Supported |
 | ------- | ------ | --------- |
-| Latest Main | Development | ✅ Full Support |
-| 0.1.x | Alpha | ✅ Security Fixes |
-| < 0.1 | Pre-release | ❌ No Support |
+| 0.0.1 | Initial Release (Alpha) | ✅ Full Support |
 
-**Note**: As Grob is in alpha development, breaking changes may occur. Users should be aware that updating may require code adjustments.
+**Note**: Grob is at its initial release (0.0.1). As the project develops, new versions will be released with new features, improvements, and security patches.
 
 ### Version Support Details
 
-- **Latest Main Branch**: All new security patches and critical bug fixes are applied immediately
-- **0.1.x (Alpha)**: Security vulnerabilities will receive patches within 7 days of confirmation
-- **Pre-release versions**: Not supported; users should upgrade to the latest version
+- **0.0.1**: Current and only version - all security patches and bug fixes are applied to this version
+- Future releases will follow semantic versioning (0.1.0, 0.2.0, etc.)
 
 ---
 
