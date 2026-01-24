@@ -1,8 +1,8 @@
 # Rust build output
 target/
 .github/
-.vscode/
 .DS_Store/
+.vscode/
 
 # Log files
 grob_debug.log

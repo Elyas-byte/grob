@@ -7,7 +7,7 @@ use pixels::{Pixels, SurfaceTexture};
 use rusttype::{Scale, point};
 
 use engine::parser::html::tree_builder::HtmlParser;
-use engine::style::{Stylesheet, Style, Selector};
+use engine::style::{Stylesheet, Style, Selector, Viewport};
 use engine::layout::LayoutEngine;
 use engine::dom::{NodeType, Dom};
 use engine::font::FontManager;
@@ -133,40 +133,15 @@ fn load_page(url: &str) -> (Arc<Dom>, Stylesheet) {
         log(&format!("Stylesheet now has {} rules", stylesheet.rules.len()));
     }
     
-    // Add default styles if no CSS was parsed
-    if stylesheet.rules.is_empty() {
-        let mut body_style = Style::new();
-        body_style.properties.insert("color".to_string(), "black".to_string());
-        body_style.properties.insert("font-family".to_string(), "Times New Roman".to_string());
-        body_style.properties.insert("font-size".to_string(), "24px".to_string());
-        stylesheet.add_rule(Selector::Tag("body".to_string()), body_style);
-        
-        let mut p_style = Style::new();
-        p_style.properties.insert("color".to_string(), "black".to_string());
-        p_style.properties.insert("font-family".to_string(), "Times New Roman".to_string());
-        p_style.properties.insert("font-size".to_string(), "22px".to_string());
-        stylesheet.add_rule(Selector::Tag("p".to_string()), p_style);
-        
-        let mut h1_style = Style::new();
-        h1_style.properties.insert("color".to_string(), "black".to_string());
-        h1_style.properties.insert("font-family".to_string(), "Times New Roman".to_string());
-        h1_style.properties.insert("font-size".to_string(), "36px".to_string());
-        stylesheet.add_rule(Selector::Tag("h1".to_string()), h1_style);
-    }
-    
-    // Always add default anchor styles
-    let mut anchor_style = Style::new();
-    anchor_style.properties.insert("color".to_string(), "#0066cc".to_string());
-    anchor_style.properties.insert("text-decoration".to_string(), "underline".to_string());
-    anchor_style.properties.insert("cursor".to_string(), "pointer".to_string());
-    stylesheet.add_rule(Selector::Tag("a".to_string()), anchor_style);
+    // Note: Default styles are now handled by the engine's apply_default_styles() method
+    // in style::Stylesheet::compute_style(), so we don't need to add them here
 
     (dom, stylesheet)
 }
 
 fn main() {
     // Initial URL to load
-    let initial_url = "https://example.com";
+    let initial_url = "https://info.cern.ch/";
     
     // Load initial page
     let (mut dom, mut stylesheet) = load_page(initial_url);
@@ -177,7 +152,7 @@ fn main() {
     let window_title = format!("Grob Browser - {}", page_title);
 
     // --- Layout ---
-    let layout_engine = LayoutEngine::new();
+    let mut layout_engine = LayoutEngine::new();
     
     // --- Font Manager ---
     let mut font_manager = FontManager::new();
@@ -192,24 +167,26 @@ fn main() {
     let event_loop = EventLoop::new();
     let window = WindowBuilder::new()
         .with_title(&window_title)
-        .with_inner_size(winit::dpi::LogicalSize::new(1200, 800))
         .build(&event_loop)
         .expect("Failed to create window");
 
     let scale_factor = window.scale_factor() as f32;
+    let initial_size = window.inner_size();
     let mut pixels = {
-        let size = window.inner_size();
-        let surface_texture = SurfaceTexture::new(size.width, size.height, &window);
-        Pixels::new(size.width, size.height, surface_texture).expect("Failed to create pixels buffer")
+        let surface_texture = SurfaceTexture::new(initial_size.width, initial_size.height, &window);
+        Pixels::new(initial_size.width, initial_size.height, surface_texture).expect("Failed to create pixels buffer")
     };
 
     // Use logical size for layout calculations (scale-independent)
-    let initial_size = window.inner_size().to_logical(window.scale_factor());
-    let mut viewport_width = initial_size.width;
+    let logical_size: winit::dpi::LogicalSize<f32> = initial_size.to_logical(window.scale_factor());
+    let mut viewport = Viewport::new(logical_size.width, logical_size.height);
+    layout_engine.set_viewport(viewport);
+    stylesheet.set_viewport(viewport);
     
     // Track mouse position and layout root for click handling
     let mut last_mouse_pos = (0.0, 0.0);
     let mut last_layout_root: Option<engine::layout::LayoutBox> = None;
+    let mut needs_layout = true;
     
     // Request an initial redraw
     window.request_redraw();
@@ -221,8 +198,11 @@ fn main() {
                 *control_flow = ControlFlow::Exit;
             }
             Event::WindowEvent { event: WindowEvent::Resized(new_size), .. } => {
-                let logical_size = new_size.to_logical(window.scale_factor());
-                viewport_width = logical_size.width;
+                let logical_size: winit::dpi::LogicalSize<f32> = new_size.to_logical(window.scale_factor());
+                viewport = Viewport::new(logical_size.width, logical_size.height);
+                layout_engine.set_viewport(viewport);
+                stylesheet.set_viewport(viewport);
+                needs_layout = true;
                 // Recreate pixels buffer with new dimensions (use physical pixels)
                 let surface_texture = SurfaceTexture::new(new_size.width, new_size.height, &window);
                 pixels = Pixels::new(new_size.width, new_size.height, surface_texture).unwrap();
@@ -254,6 +234,8 @@ fn main() {
                         let (new_dom, new_stylesheet) = load_page(&new_url);
                         dom = new_dom;
                         stylesheet = new_stylesheet;
+                        stylesheet.set_viewport(viewport);
+                        needs_layout = true;
                         
                         // Update window title
                         let new_title = extract_title(&dom);
@@ -261,8 +243,10 @@ fn main() {
                     }
                 }
                 
-                let layout_root = layout_engine.layout_with_viewport(&dom, &stylesheet, viewport_width);
-                last_layout_root = Some(layout_root.clone());
+                // Always recompute layout to ensure it fills current viewport
+                let layout_root = layout_engine.layout_with_full_viewport(&dom, &stylesheet, viewport, &mut font_manager);
+                last_layout_root = Some(layout_root);
+                needs_layout = false;
                 
                 let frame = pixels.frame_mut();
                 let physical_size = window.inner_size();
@@ -273,14 +257,18 @@ fn main() {
                 }
 
                 // Draw layout and text - pass both logical and physical dimensions for proper scaling
-                draw_layout_and_text(frame, &layout_root, &dom, &mut font_manager, physical_size.width as usize, physical_size.height as usize, scale_factor);
-                draw_images(frame, &layout_root, &dom, &network_manager, physical_size.width as usize, physical_size.height as usize, scale_factor);
+                if let Some(ref layout_root) = last_layout_root {
+                    draw_layout_and_text(frame, layout_root, &dom, &mut font_manager, physical_size.width as usize, physical_size.height as usize, scale_factor);
+                    draw_images(frame, layout_root, &dom, &network_manager, physical_size.width as usize, physical_size.height as usize, scale_factor);
+                }
 
                 pixels.render().unwrap();
             }
             Event::MainEventsCleared => {
-                // Continuously request redraws to keep the window responsive
-                window.request_redraw();
+                // Only request redraw if layout changed
+                if needs_layout {
+                    window.request_redraw();
+                }
             }
             _ => {}
         }
@@ -366,12 +354,14 @@ fn draw_text_glyphs(
     scale_factor: f32,
 ) {
     let font_family = layout.style.get_font_family();
-    let font_size = layout.style.get_font_size();
+    let font_size = layout.style.get_font_size() * scale_factor;
     let (text_r, text_g, text_b) = layout.style.get_color();
     let has_underline = layout.style.has_text_decoration("underline");
+    let is_bold = layout.style.is_bold();
+    let is_italic = layout.style.is_italic();
     let scale = Scale::uniform(font_size);
 
-    if let Some(font) = font_manager.load_system_font(font_family) {
+    if let Some(font) = font_manager.load_font_variant(font_family, is_bold, is_italic) {
         let v_metrics = font.v_metrics(scale);
         let mut x = layout.dimensions.x * scale_factor;
         let y = layout.dimensions.y * scale_factor + v_metrics.ascent;
@@ -387,16 +377,18 @@ fn draw_text_glyphs(
 
                     if px >= 0 && py >= 0 && px < screen_width as i32 && py < screen_height as i32 {
                         let idx = (py as usize * screen_width + px as usize) * 4;
-                        let coverage = (v * 255.0) as u8;
-                        let bg_r = frame[idx] as u32;
-                        let bg_g = frame[idx + 1] as u32;
-                        let bg_b = frame[idx + 2] as u32;
-                        let cov = coverage as u32;
+                        if idx + 3 < frame.len() {
+                            let coverage = (v * 255.0) as u8;
+                            let bg_r = frame[idx] as u32;
+                            let bg_g = frame[idx + 1] as u32;
+                            let bg_b = frame[idx + 2] as u32;
+                            let cov = coverage as u32;
 
-                        frame[idx] = ((bg_r * (255 - cov) + text_r as u32 * cov) / 255) as u8;
-                        frame[idx + 1] = ((bg_g * (255 - cov) + text_g as u32 * cov) / 255) as u8;
-                        frame[idx + 2] = ((bg_b * (255 - cov) + text_b as u32 * cov) / 255) as u8;
-                        frame[idx + 3] = 255;
+                            frame[idx] = ((bg_r * (255 - cov) + text_r as u32 * cov) / 255) as u8;
+                            frame[idx + 1] = ((bg_g * (255 - cov) + text_g as u32 * cov) / 255) as u8;
+                            frame[idx + 2] = ((bg_b * (255 - cov) + text_b as u32 * cov) / 255) as u8;
+                            frame[idx + 3] = 255;
+                        }
                     }
                 });
             }
@@ -406,18 +398,22 @@ fn draw_text_glyphs(
 
         // Draw underline if needed
         if has_underline {
-            let underline_y = (layout.dimensions.y as f32 + font_size * 1.05) as usize;
+            let underline_y = (layout.dimensions.y * scale_factor + font_size * 1.1) as usize;
             let start_x = text_start_x as usize;
             let end_x = x as usize;
+            let thickness = (font_size / 16.0).max(1.0) as usize;
 
-            if underline_y < screen_height {
-                for px in start_x..end_x.min(screen_width) {
-                    let idx = (underline_y * screen_width + px) * 4;
-                    if idx + 3 < frame.len() {
-                        frame[idx] = text_r;
-                        frame[idx + 1] = text_g;
-                        frame[idx + 2] = text_b;
-                        frame[idx + 3] = 255;
+            for t in 0..thickness {
+                let uy = underline_y + t;
+                if uy < screen_height {
+                    for px in start_x..end_x.min(screen_width) {
+                        let idx = (uy * screen_width + px) * 4;
+                        if idx + 3 < frame.len() {
+                            frame[idx] = text_r;
+                            frame[idx + 1] = text_g;
+                            frame[idx + 2] = text_b;
+                            frame[idx + 3] = 255;
+                        }
                     }
                 }
             }
@@ -564,7 +560,7 @@ fn fetch_html(url: &str) -> Result<String, Box<dyn std::error::Error>> {
     let status = response.status();
     
     if !status.is_success() {
-        return Err(format!("HTTP Error: {}", status).into());
+        return Err(format!("{}", status).into());
     }
     
     let html = response.text()?;

@@ -5,6 +5,12 @@ pub struct FontManager {
     fonts: HashMap<String, Font<'static>>,
 }
 
+impl Default for FontManager {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl FontManager {
     pub fn new() -> Self {
         Self {
@@ -12,29 +18,39 @@ impl FontManager {
         }
     }
 
-    /// Load a system font by family name (e.g., "Times New Roman", "Arial", "DejaVuSans")
+    /// Load a system font by family name with optional bold/italic variants
     pub fn load_system_font(&mut self, family: &str) -> Option<&Font<'static>> {
-        if self.fonts.contains_key(family) {
-            return self.fonts.get(family);
+        self.load_font_variant(family, false, false)
+    }
+
+    pub fn load_font_variant(&mut self, family: &str, bold: bool, italic: bool) -> Option<&Font<'static>> {
+        let key = format!("{}-{}-{}", family, bold, italic);
+        
+        if self.fonts.contains_key(&key) {
+            return self.fonts.get(&key);
         }
 
-        // Try to load from system fonts directories
-        let font_data = self.get_system_font_bytes(family)?;
-
-        // We need to store the data somewhere with 'static lifetime
-        // For now, we'll use Box::leak which is acceptable for a small number of fonts
-        let font_bytes: &'static [u8] = Box::leak(font_data.into_boxed_slice());
-        let font = Font::try_from_bytes(font_bytes)?;
-
-        self.fonts.insert(family.to_string(), font);
-        self.fonts.get(family)
+        // Handle font-family lists (e.g., "system-ui,sans-serif")
+        let families: Vec<&str> = family.split(',').map(|f| f.trim()).collect();
+        
+        for font_family in families {
+            if let Some(font_data) = self.get_system_font_bytes_variant(font_family, bold, italic) {
+                let font_bytes: &'static [u8] = Box::leak(font_data.into_boxed_slice());
+                if let Some(font) = Font::try_from_bytes(font_bytes) {
+                    self.fonts.insert(key.clone(), font);
+                    return self.fonts.get(&key);
+                }
+            }
+        }
+        
+        None
     }
 
     /// Get font bytes from system directories
-    fn get_system_font_bytes(&self, family: &str) -> Option<Vec<u8>> {
+    fn get_system_font_bytes_variant(&self, family: &str, bold: bool, italic: bool) -> Option<Vec<u8>> {
         #[cfg(target_os = "windows")]
         {
-            return self.load_windows_font(family);
+            return self.load_windows_font_variant(family, bold, italic);
         }
 
         #[cfg(target_os = "macos")]
@@ -49,12 +65,13 @@ impl FontManager {
 
         #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
         {
+            let _ = (family, bold, italic);
             None
         }
     }
 
     #[cfg(target_os = "windows")]
-    fn load_windows_font(&self, family: &str) -> Option<Vec<u8>> {
+    fn load_windows_font_variant(&self, family: &str, bold: bool, italic: bool) -> Option<Vec<u8>> {
         use std::env;
         use std::fs;
 
@@ -62,15 +79,28 @@ impl FontManager {
             .ok()
             .map(|wd| format!("{}\\Fonts", wd))?;
 
-        // Map family names to common Windows font filenames
-        let filename = match family.to_lowercase().as_str() {
-            "times new roman" | "times" => "times.ttf",
-            "arial" => "arial.ttf",
-            "georgia" => "georgia.ttf",
-            "verdana" => "verdana.ttf",
-            "courier new" | "courier" => "cour.ttf",
-            "comic sans ms" | "comic sans" => "comic.ttf",
-            _ => return None,
+        let filename = match (family.to_lowercase().as_str(), bold, italic) {
+            ("times new roman" | "times", false, false) => "times.ttf",
+            ("times new roman" | "times", true, false) => "timesbd.ttf",
+            ("times new roman" | "times", false, true) => "timesi.ttf",
+            ("times new roman" | "times", true, true) => "timesbi.ttf",
+            ("arial" | "system-ui" | "sans-serif", false, false) => "arial.ttf",
+            ("arial" | "system-ui" | "sans-serif", true, false) => "arialbd.ttf",
+            ("arial" | "system-ui" | "sans-serif", false, true) => "ariali.ttf",
+            ("arial" | "system-ui" | "sans-serif", true, true) => "arialbi.ttf",
+            ("georgia", false, false) => "georgia.ttf",
+            ("georgia", true, false) => "georgiab.ttf",
+            ("georgia", false, true) => "georgiai.ttf",
+            ("georgia", true, true) => "georgiaz.ttf",
+            ("verdana", false, false) => "verdana.ttf",
+            ("verdana", true, false) => "verdanab.ttf",
+            ("verdana", false, true) => "verdanai.ttf",
+            ("verdana", true, true) => "verdanaz.ttf",
+            ("courier new" | "courier" | "monospace", false, false) => "cour.ttf",
+            ("courier new" | "courier" | "monospace", true, false) => "courbd.ttf",
+            ("courier new" | "courier" | "monospace", false, true) => "couri.ttf",
+            ("courier new" | "courier" | "monospace", true, true) => "courbi.ttf",
+            _ => "arial.ttf",
         };
 
         let path = format!("{}\\{}", fonts_dir, filename);
@@ -157,5 +187,21 @@ impl FontManager {
             }
         }
         None
+    }
+
+    /// Measure the width of a text string using actual font metrics
+    pub fn measure_text(&mut self, text: &str, font_family: &str, font_size: f32, bold: bool, italic: bool) -> f32 {
+        if let Some(font) = self.load_font_variant(font_family, bold, italic) {
+            let scale = rusttype::Scale::uniform(font_size);
+            let mut width = 0.0_f32;
+            for c in text.chars() {
+                let glyph = font.glyph(c).scaled(scale);
+                width += glyph.h_metrics().advance_width;
+            }
+            width
+        } else {
+            // Fallback to estimate if font not available
+            text.len() as f32 * font_size * 0.5
+        }
     }
 }

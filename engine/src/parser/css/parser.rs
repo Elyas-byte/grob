@@ -90,8 +90,10 @@ impl CssParser {
                     items.push(self.parse_at_rule());
                 }
                 _ => {
-                    if let Some(rule) = self.parse_rule() {
-                        items.push(CssItem::Rule(rule));
+                    if let Some(rules) = self.parse_rule() {
+                        for rule in rules {
+                            items.push(CssItem::Rule(rule));
+                        }
                     } else {
                         self.next();
                     }
@@ -138,8 +140,10 @@ impl CssParser {
                     self.next();
                 }
                 _ => {
-                    if let Some(rule) = self.parse_rule() {
-                        content.push(CssItem::Rule(rule));
+                    if let Some(rules) = self.parse_rule() {
+                        for rule in rules {
+                            content.push(CssItem::Rule(rule));
+                        }
                     } else {
                         self.next();
                     }
@@ -154,8 +158,16 @@ impl CssParser {
         }
     }
 
-    fn parse_rule(&mut self) -> Option<Rule> {
-        let selector = self.parse_selector()?;
+    fn parse_rule(&mut self) -> Option<Vec<Rule>> {
+        let mut selectors = vec![self.parse_selector()?];
+
+        // Handle comma-separated selectors (e.g., a:link, a:visited { ... })
+        while self.peek() == Some(&CssToken::Comma) {
+            self.next(); // consume comma
+            if let Some(selector) = self.parse_selector() {
+                selectors.push(selector);
+            }
+        }
 
         self.expect(&CssToken::OpenBrace);
 
@@ -163,10 +175,16 @@ impl CssParser {
 
         self.expect(&CssToken::CloseBrace);
 
-        Some(Rule {
-            selector,
-            declarations,
-        })
+        // Create a rule for each selector with the same declarations
+        let rules = selectors
+            .into_iter()
+            .map(|selector| Rule {
+                selector,
+                declarations: declarations.clone(),
+            })
+            .collect();
+
+        Some(rules)
     }
 
     fn parse_selector(&mut self) -> Option<Selector> {
@@ -382,7 +400,15 @@ impl CssParser {
                     self.next();
                 }
                 _ => {
-                    value.push_str(&self.token_to_string(token));
+                    let token_str = self.token_to_string(token);
+                    // Add space between tokens if value is not empty and doesn't end with a space
+                    // and token_str is not empty and doesn't start with punctuation
+                    if !value.is_empty() && !token_str.is_empty() 
+                       && !value.ends_with(' ') && !value.ends_with('(') && !value.ends_with(',')
+                       && !token_str.starts_with(',') && !token_str.starts_with(')') {
+                        value.push(' ');
+                    }
+                    value.push_str(&token_str);
                     self.next();
                 }
             }
