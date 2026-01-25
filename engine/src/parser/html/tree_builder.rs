@@ -1,6 +1,39 @@
-use crate::dom::{Dom, NodeId};
-use super::tokenizer::{Token, Tokenizer};
+// HTML Tree Builder implementation following WHATWG HTML Living Standard
+// Spec Reference: https://html.spec.whatwg.org/multipage/parsing.html#tree-construction
+//
+// IMPLEMENTATION STATUS:
+// ✅ Initial mode - basic
+// ✅ BeforeHtml mode - basic
+// ✅ BeforeHead mode - basic
+// ✅ InHead mode - partial (meta, link, title, style, base)
+// ✅ AfterHead mode - basic
+// ✅ InBody mode - basic element creation
+// ⚠️ Text mode - partial
+// ❌ InTable mode - not implemented
+// ❌ InSelect mode - not implemented
+// ❌ InForeignContent mode - not implemented
+// ⚠️ AfterBody mode - partial
+// ❌ InFrameset mode - not implemented
+// ❌ AfterFrameset mode - not implemented
+// ❌ AfterAfterBody mode - not implemented
+//
+// TODO(spec 13.2.6): Implement full adoption agency algorithm
+// TODO(spec 13.2.6): Implement foster parenting
+// TODO(spec 13.2.6): Implement AAA (adoption agency algorithm)
 
+use crate::dom::{Dom, NodeId};
+use super::tokenizer::{Token, Tokenizer, VOID_ELEMENTS};
+
+/// Debug logging for tree construction
+const DEBUG_TREE_BUILDER: bool = false;
+
+fn tree_builder_log(msg: &str) {
+    if DEBUG_TREE_BUILDER {
+        eprintln!("[TREE_BUILDER] {}", msg);
+    }
+}
+
+/// Insertion modes per spec 13.2.6
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[allow(dead_code)]
 enum InsertionMode {
@@ -8,20 +41,31 @@ enum InsertionMode {
     BeforeHtml,
     BeforeHead,
     InHead,
+    InHeadNoscript,
     AfterHead,
     InBody,
     Text,
     InTable,
+    InTableText,
+    InCaption,
+    InColumnGroup,
+    InTableBody,
+    InRow,
+    InCell,
     InSelect,
-    InForeignContent,
+    InSelectInTable,
+    InTemplate,
     AfterBody,
     InFrameset,
     AfterFrameset,
     AfterAfterBody,
+    AfterAfterFrameset,
 }
 
 pub struct HtmlParser {
     tokenizer: Tokenizer,
+    /// Buffer for accumulating character tokens into text nodes
+    pending_text: String,
 }
 
 // Auto-closing tags that force parent closure
@@ -39,7 +83,30 @@ impl HtmlParser {
     pub fn new(input: &str) -> Self {
         Self {
             tokenizer: Tokenizer::new(input),
+            pending_text: String::new(),
         }
+    }
+
+    /// Flush any pending text to the DOM
+    /// Only creates a text node if there's meaningful content (not just whitespace)
+    fn flush_pending_text(&mut self, dom: &mut Dom, parent: NodeId) {
+        if !self.pending_text.is_empty() {
+            // Only create text node if it has non-whitespace content
+            // OR if it's meaningful whitespace (single space between inline elements)
+            let trimmed = self.pending_text.trim();
+            if !trimmed.is_empty() {
+                tree_builder_log(&format!("Flushing text: {:?}", self.pending_text));
+                dom.create_text(&self.pending_text, Some(parent));
+            } else {
+                tree_builder_log(&format!("Skipping whitespace-only text: {:?}", self.pending_text));
+            }
+            self.pending_text.clear();
+        }
+    }
+
+    /// Convert attribute list from tokenizer format to DOM format
+    fn convert_attributes(attributes: &[super::tokenizer::Attribute]) -> Vec<(String, String)> {
+        attributes.iter().map(|a| (a.name.clone(), a.value.clone())).collect()
     }
 
     pub fn parse(mut self) -> Dom {
@@ -50,9 +117,21 @@ impl HtmlParser {
         let _fragment_context: Option<String> = None;
 
         while let Some(token) = self.tokenizer.next_token() {
+            tree_builder_log(&format!("Mode: {:?}, Token: {:?}", mode, token));
+            
             match &token {
-                Token::Eof => break,
+                Token::Eof => {
+                    // Flush any remaining text
+                    if let Some(&parent) = stack.last() {
+                        self.flush_pending_text(&mut dom, parent);
+                    }
+                    break;
+                }
                 Token::Comment(_) => {
+                    // Flush text before comment
+                    if let Some(&parent) = stack.last() {
+                        self.flush_pending_text(&mut dom, parent);
+                    }
                     // Append comment to current node (optional for now)
                     continue;
                 }
@@ -62,8 +141,19 @@ impl HtmlParser {
                         mode = InsertionMode::BeforeHtml;
                     }
                 }
+                Token::Character(c) => {
+                    // Accumulate characters into pending_text
+                    self.pending_text.push(*c);
+                    continue;
+                }
                 Token::StartTag { name, attributes, self_closing } => {
+                    // Flush pending text before processing tag
+                    if let Some(&parent) = stack.last() {
+                        self.flush_pending_text(&mut dom, parent);
+                    }
+                    
                     let tag = name.to_lowercase();
+                    let attrs = Self::convert_attributes(attributes);
 
                     // -------- INITIAL MODE --------
                     if mode == InsertionMode::Initial {
@@ -77,7 +167,7 @@ impl HtmlParser {
                     if mode == InsertionMode::BeforeHtml {
                         if tag == "html" {
                             stack.pop(); // remove implicit html
-                            let html = dom.create_element("html", attributes.clone(), Some(document));
+                            let html = dom.create_element("html", attrs.clone(), Some(document));
                             stack.push(html);
                             mode = InsertionMode::BeforeHead;
                             continue;
@@ -94,7 +184,7 @@ impl HtmlParser {
                     if mode == InsertionMode::BeforeHead || mode == InsertionMode::InHead {
                         if tag == "head" && mode == InsertionMode::BeforeHead {
                             if let Some(&parent) = stack.last() {
-                                let head = dom.create_element("head", attributes.clone(), Some(parent));
+                                let head = dom.create_element("head", attrs.clone(), Some(parent));
                                 stack.push(head);
                                 mode = InsertionMode::InHead;
                             }
@@ -110,7 +200,7 @@ impl HtmlParser {
                                 }
                             }
                             if let Some(&parent) = stack.last() {
-                                let elem_id = dom.create_element(&tag, attributes.clone(), Some(parent));
+                                let elem_id = dom.create_element(&tag, attrs.clone(), Some(parent));
                                 // Push non-self-closing elements to stack
                                 if !*self_closing && !matches!(tag.as_str(), "meta" | "link") {
                                     stack.push(elem_id);
@@ -155,8 +245,16 @@ impl HtmlParser {
                                         stack.pop();
                                         break;
                                     }
-                                    // Don't pop past body
+                                    // Don't pop past body, html, document
                                     if matches!(el.tag_name.as_str(), "body" | "html" | "document") {
+                                        break;
+                                    }
+                                    // Don't pop past list containers when handling li
+                                    if tag == "li" && matches!(el.tag_name.as_str(), "ul" | "ol") {
+                                        break;
+                                    }
+                                    // Don't pop past definition lists when handling dt/dd
+                                    if matches!(tag.as_str(), "dt" | "dd") && el.tag_name == "dl" {
                                         break;
                                     }
                                 }
@@ -165,9 +263,12 @@ impl HtmlParser {
                         }
 
                         if let Some(&parent) = stack.last() {
-                            let id = dom.create_element(&tag, attributes.clone(), Some(parent));
+                            let id = dom.create_element(&tag, attrs.clone(), Some(parent));
                             
-                            if !*self_closing && !matches!(tag.as_str(), "area" | "base" | "br" | "col" | "embed" | "hr" | "img" | "input" | "link" | "meta" | "param" | "source" | "track" | "wbr") {
+                            // Check if it's a void element that shouldn't be pushed to stack
+                            let is_void = VOID_ELEMENTS.contains(&tag.as_str());
+                            
+                            if !*self_closing && !is_void {
                                 stack.push(id);
                             }
                         }
@@ -175,6 +276,11 @@ impl HtmlParser {
                 }
 
                 Token::EndTag { name } => {
+                    // Flush pending text before processing end tag
+                    if let Some(&parent) = stack.last() {
+                        self.flush_pending_text(&mut dom, parent);
+                    }
+                    
                     let tag = name.to_lowercase();
 
                     // Special handling for head-related elements
@@ -262,25 +368,6 @@ impl HtmlParser {
                             } else if el.tag_name == "html" {
                                 mode = InsertionMode::AfterHead;
                             }
-                        }
-                    }
-                }
-
-                Token::Text(text) => {
-                    // Skip whitespace-only text in certain modes
-                    if text.trim().is_empty() && mode == InsertionMode::Initial {
-                        continue;
-                    }
-
-                    if mode == InsertionMode::InBody || mode == InsertionMode::AfterHead || mode == InsertionMode::InHead {
-                        if let Some(&parent) = stack.last() {
-                            // Auto-close <p> before text if needed
-                            if mode == InsertionMode::AfterHead {
-                                let body = dom.create_element("body", vec![], Some(parent));
-                                stack.push(body);
-                                mode = InsertionMode::InBody;
-                            }
-                            dom.create_text(text, Some(parent));
                         }
                     }
                 }

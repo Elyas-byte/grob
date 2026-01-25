@@ -9,7 +9,7 @@ use rusttype::{Scale, point};
 use engine::parser::html::tree_builder::HtmlParser;
 use engine::style::{Stylesheet, Style, Selector, Viewport};
 use engine::layout::LayoutEngine;
-use engine::dom::{NodeType, Dom};
+use engine::dom::{NodeType, Dom, NodeId};
 use engine::font::FontManager;
 use engine::net::NetworkManager;
 use std::sync::{Arc, Mutex};
@@ -45,11 +45,11 @@ fn find_anchor_recursive(
     y: f32,
 ) -> Option<String> {
     let dims = &layout.dimensions;
-    
+
     // Check if point is within this box's bounds
     if x >= dims.x && x <= dims.x + dims.width &&
        y >= dims.y && y <= dims.y + dims.height {
-        
+
         // Check if this element is an anchor tag
         if let NodeType::Element(elem) = &dom.nodes[layout.node_id].node_type {
             if elem.tag_name == "a" {
@@ -59,12 +59,73 @@ fn find_anchor_recursive(
                 }
             }
         }
-        
-        // Check children (they take priority if they're also within bounds)
+
+        // If this is a text node, check if any parent is an anchor
+        if let NodeType::Text(_) = &dom.nodes[layout.node_id].node_type {
+            // Walk up the DOM tree to find an anchor parent
+            let mut current_node_id = layout.node_id;
+            loop {
+                if let Some(parent_id) = dom.nodes[current_node_id].parent {
+                    if let NodeType::Element(elem) = &dom.nodes[parent_id].node_type {
+                        if elem.tag_name == "a" {
+                            // Found an anchor parent!
+                            if let Some(href) = elem.attributes.iter().find(|(k, _)| k == "href").map(|(_, v)| v.clone()) {
+                                return Some(href);
+                            }
+                        }
+                    }
+                    current_node_id = parent_id;
+                } else {
+                    break;
+                }
+            }
+        }
+
+        // Check layout children first
         for child in &layout.children {
             if let Some(href) = find_anchor_recursive(child, dom, x, y) {
                 return Some(href);
             }
+        }
+        
+        // If layout tree is incomplete, also search the DOM tree for anchors
+        // This handles cases where layout engine doesn't create layout boxes for all elements
+        for &child_id in &dom.nodes[layout.node_id].children {
+            if let Some(href) = find_anchor_in_dom(dom, child_id, x, y) {
+                return Some(href);
+            }
+        }
+    }
+
+    None
+}
+
+// Search through DOM for anchors, checking if text nodes are at the click position
+fn find_anchor_in_dom(dom: &Dom, node_id: NodeId, x: f32, y: f32) -> Option<String> {
+    // Check if this node or any parent is an anchor
+    if let NodeType::Text(_) = &dom.nodes[node_id].node_type {
+        // Walk up to find anchor parent
+        let mut current_node_id = node_id;
+        loop {
+            if let Some(parent_id) = dom.nodes[current_node_id].parent {
+                if let NodeType::Element(elem) = &dom.nodes[parent_id].node_type {
+                    if elem.tag_name == "a" {
+                        if let Some(href) = elem.attributes.iter().find(|(k, _)| k == "href").map(|(_, v)| v.clone()) {
+                            return Some(href);
+                        }
+                    }
+                }
+                current_node_id = parent_id;
+            } else {
+                break;
+            }
+        }
+    }
+    
+    // Recurse into children
+    for &child_id in &dom.nodes[node_id].children {
+        if let Some(href) = find_anchor_in_dom(dom, child_id, x, y) {
+            return Some(href);
         }
     }
     
@@ -217,7 +278,7 @@ fn main() {
                 // Handle click on anchor tag
                 if let Some(layout) = &last_layout_root {
                     if let Some(href) = find_anchor_at_position(layout, &dom, last_mouse_pos.0, last_mouse_pos.1, scale_factor) {
-                        log(&format!("Clicked anchor with href: {}", href));
+                        log(&format!("SUCCESS: Navigating to {}", href));
                         if let Ok(mut nav) = pending_navigation.lock() {
                             *nav = Some(href);
                         }

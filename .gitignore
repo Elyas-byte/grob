@@ -3,6 +3,6 @@ target/
 .github/
 .DS_Store/
 .vscode/
-
+out/
 # Log files
 grob_debug.log

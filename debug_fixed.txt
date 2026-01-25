@@ -1,0 +1,481 @@
+﻿cargo : warning: unused variable: `margin_top`
+At line:1 char:42
++ ... s Rahimi\Desktop\grob"; cargo run --package grob_browser 2>&1 | Out-F ...
++                             ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (warning: unused variable: `margin_top`:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+   --> engine\src\layout\mod.rs:545:14
+    |
+545 |         let (margin_top, margin_right, margin_bottom, margin_left) = style.get_margin_with_viewport(viewport.height);
+    |              ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_margin_top`
+    |
+    = note: `#[warn(unused_variables)]` (part of `#[warn(unused)]`) on by default
+
+warning: unused variable: `margin_bottom`
+   --> engine\src\layout\mod.rs:545:40
+    |
+545 |         let (margin_top, margin_right, margin_bottom, margin_left) = style.get_margin_with_viewport(viewport.height);
+    |                                        ^^^^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_margin_bottom`
+
+warning: `grob_engine` (lib) generated 2 warnings (run `cargo fix --lib -p grob_engine` to apply 2 suggestions)
+warning: value captured by `_current_url` is never read
+   --> browser\src\main.rs:233:25
+    |
+233 |                         _current_url = new_url.clone();
+    |                         ^^^^^^^^^^^^
+    |
+    = help: did you mean to capture by reference instead?
+    = note: `#[warn(unused_assignments)]` (part of `#[warn(unused)]`) on by default
+
+warning: value assigned to `_current_url` is never read
+   --> browser\src\main.rs:233:25
+    |
+233 |                         _current_url = new_url.clone();
+    |                         ^^^^^^^^^^^^
+    |
+    = help: maybe it is overwritten before being read?
+
+warning: `grob_browser` (bin "grob_browser") generated 2 warnings
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.42s
+     Running `target\debug\grob_browser.exe`
+Fetching HTML from: https://info.cern.ch/
+Successfully fetched 646 bytes from https://info.cern.ch/
+[TREE_BUILDER] Mode: Initial, Token: StartTag { name: "html", attributes: [], self_closing: false }
+[TREE_BUILDER] Mode: BeforeHead, Token: StartTag { name: "head", attributes: [], self_closing: false }
+[TREE_BUILDER] Mode: InHead, Token: EndTag { name: "head" }
+[TREE_BUILDER] Mode: AfterHead, Token: StartTag { name: "body", attributes: [], self_closing: false }
+[TREE_BUILDER] Mode: InBody, Token: StartTag { name: "header", attributes: [], self_closing: false }
+[TREE_BUILDER] Mode: InBody, Token: Character('\n')
+[TREE_BUILDER] Mode: InBody, Token: StartTag { name: "title", attributes: [], self_closing: false }
+[TREE_BUILDER] Skipping whitespace-only text: "\n"
+[TREE_BUILDER] Mode: InBody, Token: Character('h')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('p')
+[TREE_BUILDER] Mode: InBody, Token: Character(':')
+[TREE_BUILDER] Mode: InBody, Token: Character('/')
+[TREE_BUILDER] Mode: InBody, Token: Character('/')
+[TREE_BUILDER] Mode: InBody, Token: Character('i')
+[TREE_BUILDER] Mode: InBody, Token: Character('n')
+[TREE_BUILDER] Mode: InBody, Token: Character('f')
+[TREE_BUILDER] Mode: InBody, Token: Character('o')
+[TREE_BUILDER] Mode: InBody, Token: Character('.')
+[TREE_BUILDER] Mode: InBody, Token: Character('c')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character('n')
+[TREE_BUILDER] Mode: InBody, Token: Character('.')
+[TREE_BUILDER] Mode: InBody, Token: Character('c')
+[TREE_BUILDER] Mode: InBody, Token: Character('h')
+[TREE_BUILDER] Mode: InBody, Token: EndTag { name: "title" }
+[TREE_BUILDER] Flushing text: "http://info.cern.ch"
+[TREE_BUILDER] Mode: InBody, Token: Character('\n')
+[TREE_BUILDER] Mode: InBody, Token: EndTag { name: "header" }
+[TREE_BUILDER] Skipping whitespace-only text: "\n"
+[TREE_BUILDER] Mode: InBody, Token: Character('\n')
+[TREE_BUILDER] Mode: InBody, Token: Character('\n')
+[TREE_BUILDER] Mode: InBody, Token: StartTag { name: "h1", attributes: [], self_closing: false }
+[TREE_BUILDER] Skipping whitespace-only text: "\n\n"
+[TREE_BUILDER] Mode: InBody, Token: Character('h')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('p')
+[TREE_BUILDER] Mode: InBody, Token: Character(':')
+[TREE_BUILDER] Mode: InBody, Token: Character('/')
+[TREE_BUILDER] Mode: InBody, Token: Character('/')
+[TREE_BUILDER] Mode: InBody, Token: Character('i')
+[TREE_BUILDER] Mode: InBody, Token: Character('n')
+[TREE_BUILDER] Mode: InBody, Token: Character('f')
+[TREE_BUILDER] Mode: InBody, Token: Character('o')
+[TREE_BUILDER] Mode: InBody, Token: Character('.')
+[TREE_BUILDER] Mode: InBody, Token: Character('c')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character('n')
+[TREE_BUILDER] Mode: InBody, Token: Character('.')
+[TREE_BUILDER] Mode: InBody, Token: Character('c')
+[TREE_BUILDER] Mode: InBody, Token: Character('h')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('-')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('h')
+[TREE_BUILDER] Mode: InBody, Token: Character('o')
+[TREE_BUILDER] Mode: InBody, Token: Character('m')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('o')
+[TREE_BUILDER] Mode: InBody, Token: Character('f')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('h')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('f')
+[TREE_BUILDER] Mode: InBody, Token: Character('i')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character('s')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('w')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character('b')
+[TREE_BUILDER] Mode: InBody, Token: Character('s')
+[TREE_BUILDER] Mode: InBody, Token: Character('i')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: EndTag { name: "h1" }
+[TREE_BUILDER] Flushing text: "http://info.cern.ch - home of the first website"
+[TREE_BUILDER] Mode: InBody, Token: Character('\n')
+[TREE_BUILDER] Mode: InBody, Token: StartTag { name: "p", attributes: [], self_closing: false }
+[TREE_BUILDER] Skipping whitespace-only text: "\n"
+[TREE_BUILDER] Mode: InBody, Token: Character('F')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character('o')
+[TREE_BUILDER] Mode: InBody, Token: Character('m')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('h')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('y')
+[TREE_BUILDER] Mode: InBody, Token: Character('o')
+[TREE_BUILDER] Mode: InBody, Token: Character('u')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('c')
+[TREE_BUILDER] Mode: InBody, Token: Character('a')
+[TREE_BUILDER] Mode: InBody, Token: Character('n')
+[TREE_BUILDER] Mode: InBody, Token: Character(':')
+[TREE_BUILDER] Mode: InBody, Token: EndTag { name: "p" }
+[TREE_BUILDER] Flushing text: "From here you can:"
+[TREE_BUILDER] Mode: InBody, Token: Character('\n')
+[TREE_BUILDER] Mode: InBody, Token: StartTag { name: "ul", attributes: [], self_closing: false }
+[TREE_BUILDER] Skipping whitespace-only text: "\n"
+[TREE_BUILDER] Mode: InBody, Token: Character('\n')
+[TREE_BUILDER] Mode: InBody, Token: StartTag { name: "li", attributes: [], self_closing: false }
+[TREE_BUILDER] Skipping whitespace-only text: "\n"
+[TREE_BUILDER] Mode: InBody, Token: StartTag { name: "a", attributes: [Attribute { name: "href", value: "http://info.cern.ch/hypertext/WWW/TheProject.html" 
+}], self_closing: false }
+[TREE_BUILDER] Mode: InBody, Token: Character('B')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character('o')
+[TREE_BUILDER] Mode: InBody, Token: Character('w')
+[TREE_BUILDER] Mode: InBody, Token: Character('s')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('h')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('f')
+[TREE_BUILDER] Mode: InBody, Token: Character('i')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character('s')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('w')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character('b')
+[TREE_BUILDER] Mode: InBody, Token: Character('s')
+[TREE_BUILDER] Mode: InBody, Token: Character('i')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: EndTag { name: "a" }
+[TREE_BUILDER] Flushing text: "Browse the first website"
+[TREE_BUILDER] Mode: InBody, Token: EndTag { name: "li" }
+[TREE_BUILDER] Mode: InBody, Token: Character('\n')
+[TREE_BUILDER] Mode: InBody, Token: StartTag { name: "li", attributes: [], self_closing: false }
+[TREE_BUILDER] Skipping whitespace-only text: "\n"
+[TREE_BUILDER] Mode: InBody, Token: StartTag { name: "a", attributes: [Attribute { name: "href", value: 
+"http://line-mode.cern.ch/www/hypertext/WWW/TheProject.html" }], self_closing: false }
+[TREE_BUILDER] Mode: InBody, Token: Character('B')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character('o')
+[TREE_BUILDER] Mode: InBody, Token: Character('w')
+[TREE_BUILDER] Mode: InBody, Token: Character('s')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('h')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('f')
+[TREE_BUILDER] Mode: InBody, Token: Character('i')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character('s')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('w')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character('b')
+[TREE_BUILDER] Mode: InBody, Token: Character('s')
+[TREE_BUILDER] Mode: InBody, Token: Character('i')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('u')
+[TREE_BUILDER] Mode: InBody, Token: Character('s')
+[TREE_BUILDER] Mode: InBody, Token: Character('i')
+[TREE_BUILDER] Mode: InBody, Token: Character('n')
+[TREE_BUILDER] Mode: InBody, Token: Character('g')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('h')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('l')
+[TREE_BUILDER] Mode: InBody, Token: Character('i')
+[TREE_BUILDER] Mode: InBody, Token: Character('n')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character('-')
+[TREE_BUILDER] Mode: InBody, Token: Character('m')
+[TREE_BUILDER] Mode: InBody, Token: Character('o')
+[TREE_BUILDER] Mode: InBody, Token: Character('d')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('b')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character('o')
+[TREE_BUILDER] Mode: InBody, Token: Character('w')
+[TREE_BUILDER] Mode: InBody, Token: Character('s')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('s')
+[TREE_BUILDER] Mode: InBody, Token: Character('i')
+[TREE_BUILDER] Mode: InBody, Token: Character('m')
+[TREE_BUILDER] Mode: InBody, Token: Character('u')
+[TREE_BUILDER] Mode: InBody, Token: Character('l')
+[TREE_BUILDER] Mode: InBody, Token: Character('a')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('o')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: EndTag { name: "a" }
+[TREE_BUILDER] Flushing text: "Browse the first website using the line-mode browser simulator"
+[TREE_BUILDER] Mode: InBody, Token: EndTag { name: "li" }
+[TREE_BUILDER] Mode: InBody, Token: Character('\n')
+[TREE_BUILDER] Mode: InBody, Token: StartTag { name: "li", attributes: [], self_closing: false }
+[TREE_BUILDER] Skipping whitespace-only text: "\n"
+[TREE_BUILDER] Mode: InBody, Token: StartTag { name: "a", attributes: [Attribute { name: "href", value: "http://home.web.cern.ch/topics/birth-web" }], 
+self_closing: false }
+[TREE_BUILDER] Mode: InBody, Token: Character('L')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character('a')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character('n')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('a')
+[TREE_BUILDER] Mode: InBody, Token: Character('b')
+[TREE_BUILDER] Mode: InBody, Token: Character('o')
+[TREE_BUILDER] Mode: InBody, Token: Character('u')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('h')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('b')
+[TREE_BUILDER] Mode: InBody, Token: Character('i')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('h')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('o')
+[TREE_BUILDER] Mode: InBody, Token: Character('f')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('h')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('w')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character('b')
+[TREE_BUILDER] Mode: InBody, Token: EndTag { name: "a" }
+[TREE_BUILDER] Flushing text: "Learn about the birth of the web"
+[TREE_BUILDER] Mode: InBody, Token: EndTag { name: "li" }
+[TREE_BUILDER] Mode: InBody, Token: Character('\n')
+[TREE_BUILDER] Mode: InBody, Token: StartTag { name: "li", attributes: [], self_closing: false }
+[TREE_BUILDER] Skipping whitespace-only text: "\n"
+[TREE_BUILDER] Mode: InBody, Token: StartTag { name: "a", attributes: [Attribute { name: "href", value: "http://home.web.cern.ch/about" }], self_closing: 
+false }
+[TREE_BUILDER] Mode: InBody, Token: Character('L')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character('a')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character('n')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('a')
+[TREE_BUILDER] Mode: InBody, Token: Character('b')
+[TREE_BUILDER] Mode: InBody, Token: Character('o')
+[TREE_BUILDER] Mode: InBody, Token: Character('u')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('C')
+[TREE_BUILDER] Mode: InBody, Token: Character('E')
+[TREE_BUILDER] Mode: InBody, Token: Character('R')
+[TREE_BUILDER] Mode: InBody, Token: Character('N')
+[TREE_BUILDER] Mode: InBody, Token: Character(',')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('h')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('p')
+[TREE_BUILDER] Mode: InBody, Token: Character('h')
+[TREE_BUILDER] Mode: InBody, Token: Character('y')
+[TREE_BUILDER] Mode: InBody, Token: Character('s')
+[TREE_BUILDER] Mode: InBody, Token: Character('i')
+[TREE_BUILDER] Mode: InBody, Token: Character('c')
+[TREE_BUILDER] Mode: InBody, Token: Character('s')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('l')
+[TREE_BUILDER] Mode: InBody, Token: Character('a')
+[TREE_BUILDER] Mode: InBody, Token: Character('b')
+[TREE_BUILDER] Mode: InBody, Token: Character('o')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character('a')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('o')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character('y')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('w')
+[TREE_BUILDER] Mode: InBody, Token: Character('h')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('t')
+[TREE_BUILDER] Mode: InBody, Token: Character('h')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('w')
+[TREE_BUILDER] Mode: InBody, Token: Character('e')
+[TREE_BUILDER] Mode: InBody, Token: Character('b')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('w')
+[TREE_BUILDER] Mode: InBody, Token: Character('a')
+[TREE_BUILDER] Mode: InBody, Token: Character('s')
+[TREE_BUILDER] Mode: InBody, Token: Character(' ')
+[TREE_BUILDER] Mode: InBody, Token: Character('b')
+[TREE_BUILDER] Mode: InBody, Token: Character('o')
+[TREE_BUILDER] Mode: InBody, Token: Character('r')
+[TREE_BUILDER] Mode: InBody, Token: Character('n')
+[TREE_BUILDER] Mode: InBody, Token: EndTag { name: "a" }
+[TREE_BUILDER] Flushing text: "Learn about CERN, the physics laboratory where the web was born"
+[TREE_BUILDER] Mode: InBody, Token: EndTag { name: "li" }
+[TREE_BUILDER] Mode: InBody, Token: Character('\n')
+[TREE_BUILDER] Mode: InBody, Token: EndTag { name: "ul" }
+[TREE_BUILDER] Skipping whitespace-only text: "\n"
+[TREE_BUILDER] Mode: InBody, Token: Character('\n')
+[TREE_BUILDER] Mode: InBody, Token: EndTag { name: "body" }
+[TREE_BUILDER] Skipping whitespace-only text: "\n"
+[TREE_BUILDER] Mode: AfterHead, Token: EndTag { name: "html" }
+[TREE_BUILDER] Mode: AfterHead, Token: Character('\n')
+[TREE_BUILDER] Mode: AfterHead, Token: Eof
+[TREE_BUILDER] Skipping whitespace-only text: "\n"
+[LAYOUT] === LAYOUT START === viewport: 800x600
+[LAYOUT] layout_root_element: <document> viewport_width=800
+[LAYOUT]   <document> style props: []
+[LAYOUT]   <document> margins: top=0, right=0, bottom=0, left=0, auto=false
+[LAYOUT]   <document> explicit_width: None
+[LAYOUT]   <document> layout: content_x=0, content_width=800
+[LAYOUT] layout_root_element: <html> viewport_width=800
+[LAYOUT]   <html> style props: []
+[LAYOUT]   <html> margins: top=0, right=0, bottom=0, left=0, auto=false
+[LAYOUT]   <html> explicit_width: None
+[LAYOUT]   <html> layout: content_x=0, content_width=800
+[LAYOUT] layout_root_element: <html> viewport_width=800
+[LAYOUT]   <html> style props: []
+[LAYOUT]   <html> margins: top=0, right=0, bottom=0, left=0, auto=false
+[LAYOUT]   <html> explicit_width: None
+[LAYOUT]   <html> layout: content_x=0, content_width=800
+[LAYOUT] layout_root_element: <body> viewport_width=800
+[LAYOUT]   <body> style props: []
+[LAYOUT]   <body> margins: top=0, right=0, bottom=0, left=0, auto=false
+[LAYOUT]   <body> explicit_width: None
+[LAYOUT]   <body> layout: content_x=0, content_width=800
+[LAYOUT] layout_block: <header> at (0, 0) containing_width=800
+[LAYOUT]   margins: t=0, r=0, b=0, l=0, auto=false
+[LAYOUT]   padding: t=0, r=0, b=0, l=0
+[LAYOUT]   explicit_width: None
+[LAYOUT]   content_width: 800
+[LAYOUT]   final margins: left=0, right=0
+[LAYOUT]   border_box: x=0, y=0, width=800
+[LAYOUT] layout_block: <h1> at (0, 10.72) containing_width=800
+[LAYOUT]   margins: t=10.72, r=0, b=10.72, l=0, auto=false
+[LAYOUT]   padding: t=0, r=0, b=0, l=0
+[LAYOUT]   explicit_width: None
+[LAYOUT]   content_width: 800
+[LAYOUT]   final margins: left=0, right=0
+[LAYOUT]   border_box: x=0, y=10.72, width=800
+[TEXT] === layout_inline_line: x=0, y=10.72, width=800 ===
+[TEXT]   text node: 'http://info.cern.ch - home of the first website' font_size=32
+[TEXT]   split into 7 words: ["http://info.cern.ch", "-", "home", "of", "the", "first", "website"]
+[TEXT]     word[0] 'http://info.cern.ch': width=223.13, space_width=7.22, current_x=0.00, available=800.00
+[TEXT]       -> PLACE at x=0.00, word_width=223.13
+[TEXT]       -> ADD SPACE: 7.22 (current_x: 223.13 -> 230.35)
+[TEXT]     word[1] '-': width=9.62, space_width=7.22, current_x=230.35, available=569.65
+[TEXT]       -> PLACE at x=230.35, word_width=9.62
+[TEXT]       -> ADD SPACE: 7.22 (current_x: 239.97 -> 247.20)
+[TEXT]     word[2] 'home': width=67.41, space_width=7.22, current_x=247.20, available=552.80
+[TEXT]       -> PLACE at x=247.20, word_width=67.41
+[TEXT]       -> ADD SPACE: 7.22 (current_x: 314.61 -> 321.83)
+[TEXT]     word[3] 'of': width=24.07, space_width=7.22, current_x=321.83, available=478.17
+[TEXT]       -> PLACE at x=321.83, word_width=24.07
+[TEXT]       -> ADD SPACE: 7.22 (current_x: 345.90 -> 353.13)
+[TEXT]     word[4] 'the': width=38.52, space_width=7.22, current_x=353.13, available=446.87
+[TEXT]       -> PLACE at x=353.13, word_width=38.52
+[TEXT]       -> ADD SPACE: 7.22 (current_x: 391.65 -> 398.87)
+[TEXT]     word[5] 'first': width=51.34, space_width=7.22, current_x=398.87, available=401.13
+[TEXT]       -> PLACE at x=398.87, word_width=51.34
+[TEXT]       -> ADD SPACE: 7.22 (current_x: 450.22 -> 457.44)
+[TEXT]     word[6] 'website': width=91.49, space_width=7.22, current_x=457.44, available=342.56
+[TEXT]       -> PLACE at x=457.44, word_width=91.49
+[LAYOUT]   inline_line: 7 children, height=38.4
+[LAYOUT] layout_block: <p> at (0, 75.840004) containing_width=800
+[LAYOUT]   margins: t=16, r=0, b=16, l=0, auto=false
+[LAYOUT]   padding: t=0, r=0, b=0, l=0
+[LAYOUT]   explicit_width: None
+[LAYOUT]   content_width: 800
+[LAYOUT]   final margins: left=0, right=0
+[LAYOUT]   border_box: x=0, y=75.840004, width=800
+[TEXT] === layout_inline_line: x=0, y=75.840004, width=800 ===
+[TEXT]   text node: 'From here you can:' font_size=16
+[TEXT]   split into 4 words: ["From", "here", "you", "can:"]
+[TEXT]     word[0] 'From': width=31.31, space_width=3.61, current_x=0.00, available=800.00
+[TEXT]       -> PLACE at x=0.00, word_width=31.31
+[TEXT]       -> ADD SPACE: 3.61 (current_x: 31.31 -> 34.92)
+[TEXT]     word[1] 'here': width=24.86, space_width=3.61, current_x=34.92, available=765.08
+[TEXT]       -> PLACE at x=34.92, word_width=24.86
+[TEXT]       -> ADD SPACE: 3.61 (current_x: 59.78 -> 63.39)
+[TEXT]     word[2] 'you': width=21.67, space_width=3.61, current_x=63.39, available=736.61
+[TEXT]       -> PLACE at x=63.39, word_width=21.67
+[TEXT]       -> ADD SPACE: 3.61 (current_x: 85.07 -> 88.68)
+[TEXT]     word[3] 'can:': width=24.06, space_width=3.61, current_x=88.68, available=711.32
+[TEXT]       -> PLACE at x=88.68, word_width=24.06
+[LAYOUT]   inline_line: 4 children, height=19.2
+[LAYOUT] layout_list_container: <ul> depth=0 at (0, 111.04001)
+[LAYOUT]   list indent: 40, content_x: 40, content_width: 760
+[LAYOUT]   list_container child: <li> is_list_item=true is_list_container=false is_block=true
+[LAYOUT]     -> calling layout_list_item for <li> #1
+[LAYOUT] layout_list_item: item #1 marker='ΓÇó' marker_width=5.06
+[TEXT] === layout_inline_line: x=40, y=111.04001, width=760 ===
+[LAYOUT]   inline_line: 1 children, height=19.2
+[LAYOUT]   list_container child: <li> is_list_item=true is_list_container=false is_block=true
+[LAYOUT]     -> calling layout_list_item for <li> #2
+[LAYOUT] layout_list_item: item #2 marker='ΓÇó' marker_width=5.06
+[TEXT] === layout_inline_line: x=40, y=130.24, width=760 ===
+[LAYOUT]   inline_line: 1 children, height=19.2
+[LAYOUT]   list_container child: <li> is_list_item=true is_list_container=false is_block=true
+[LAYOUT]     -> calling layout_list_item for <li> #3
+[LAYOUT] layout_list_item: item #3 marker='ΓÇó' marker_width=5.06
+[TEXT] === layout_inline_line: x=40, y=149.44, width=760 ===
+[LAYOUT]   inline_line: 1 children, height=19.2
+[LAYOUT]   list_container child: <li> is_list_item=true is_list_container=false is_block=true
+[LAYOUT]     -> calling layout_list_item for <li> #4
+[LAYOUT] layout_list_item: item #4 marker='ΓÇó' marker_width=5.06
+[TEXT] === layout_inline_line: x=40, y=168.64, width=760 ===
+[LAYOUT]   inline_line: 1 children, height=19.2
+[LAYOUT] === LAYOUT END === root box: x=0, y=0, w=800, h=1200

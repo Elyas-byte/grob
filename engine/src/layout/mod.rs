@@ -216,6 +216,20 @@ impl LayoutEngine {
                 child_box.dimensions.width = content_width;
                 current_y += child_box.dimensions.height;
                 children_boxes.push(child_box);
+            } else if self.is_list_container(dom, child_id) {
+                // List containers (ul, ol)
+                let child_style = stylesheet.compute_style_with_viewport(dom, child_id, viewport);
+                let (child_mt, _, child_mb, _) = child_style.get_margin_with_viewport(viewport.height);
+                current_y += child_mt;
+                
+                let list_box = self.layout_list_container(
+                    dom, stylesheet, child_id,
+                    content_x, current_y, content_width,
+                    exclude_tags, viewport, font_manager,
+                    0,
+                );
+                current_y += list_box.dimensions.height + child_mb;
+                children_boxes.push(list_box);
             } else if self.is_block_element(dom, child_id) {
                 // Get child margins first to properly position
                 let child_style = stylesheet.compute_style_with_viewport(dom, child_id, viewport);
@@ -240,8 +254,11 @@ impl LayoutEngine {
                     content_x, current_y, content_width, 
                     exclude_tags, viewport, font_manager
                 );
-                current_y += line_box.dimensions.height;
-                children_boxes.push(line_box);
+                // Only add line box if it has content (non-zero height)
+                if line_box.dimensions.height > 0.0 {
+                    current_y += line_box.dimensions.height;
+                    children_boxes.push(line_box);
+                }
             }
         }
 
@@ -269,7 +286,39 @@ impl LayoutEngine {
             crate::dom::NodeType::Element(el) => matches!(el.tag_name.as_str(),
                 "p" | "div" | "body" | "html" | "document" | "head" | "title" | "meta" | "link" | 
                 "style" | "script" | "h1" | "h2" | "h3" | "h4" | "h5" | "h6" | "img" | "iframe" | 
-                "video" | "canvas"),
+                "video" | "canvas" | "ul" | "ol" | "li" | "dl" | "dt" | "dd" | "blockquote" | 
+                "pre" | "hr" | "address" | "article" | "aside" | "footer" | "header" | "nav" | 
+                "section" | "figure" | "figcaption" | "main" | "form" | "fieldset" | "table"),
+        }
+    }
+    
+    /// Check if element is a list container (ul or ol)
+    fn is_list_container(&self, dom: &Dom, node_id: NodeId) -> bool {
+        match &dom.nodes[node_id].node_type {
+            crate::dom::NodeType::Element(el) => matches!(el.tag_name.as_str(), "ul" | "ol"),
+            _ => false,
+        }
+    }
+    
+    /// Check if element is a list item
+    fn is_list_item(&self, dom: &Dom, node_id: NodeId) -> bool {
+        match &dom.nodes[node_id].node_type {
+            crate::dom::NodeType::Element(el) => el.tag_name == "li",
+            _ => false,
+        }
+    }
+    
+    /// Get the list type for marker generation
+    fn get_list_type(&self, dom: &Dom, node_id: NodeId) -> Option<&str> {
+        match &dom.nodes[node_id].node_type {
+            crate::dom::NodeType::Element(el) => {
+                match el.tag_name.as_str() {
+                    "ul" => Some("ul"),
+                    "ol" => Some("ol"),
+                    _ => None,
+                }
+            }
+            _ => None,
         }
     }
 
@@ -368,7 +417,22 @@ impl LayoutEngine {
                 continue;
             }
 
-            if self.is_block_element(dom, child_id) {
+            // Check for list containers first (ul, ol)
+            if self.is_list_container(dom, child_id) {
+                let child_style = stylesheet.compute_style_with_viewport(dom, child_id, viewport);
+                let (child_mt, _, child_mb, _) = child_style.get_margin_with_viewport(viewport.height);
+                current_y += child_mt;
+                
+                let list_box = self.layout_list_container(
+                    dom, stylesheet, child_id,
+                    content_x, current_y, content_width,
+                    exclude_tags, viewport, font_manager,
+                    0, // list depth starts at 0
+                );
+                current_y += list_box.dimensions.height + child_mb;
+                children_boxes.push(list_box);
+                child_idx += 1;
+            } else if self.is_block_element(dom, child_id) {
                 // Block element: layout within content area
                 // Child's containing width is THIS element's content width
                 // Get child margins first to properly position
@@ -419,8 +483,11 @@ impl LayoutEngine {
                     content_x, current_y, content_width, 
                     exclude_tags, viewport, font_manager
                 );
-                current_y += line_box.dimensions.height;
-                children_boxes.push(line_box);
+                // Only add line box if it has content (non-zero height)
+                if line_box.dimensions.height > 0.0 {
+                    current_y += line_box.dimensions.height;
+                    children_boxes.push(line_box);
+                }
             }
         }
 
@@ -439,7 +506,293 @@ impl LayoutEngine {
                 x: border_box_x,
                 y: border_box_y, 
                 width: border_box_width, 
-                height: border_box_height.max(1.0),
+                height: border_box_height,  // Don't force min height - empty blocks should be zero-height
+            },
+            style,
+            children: children_boxes,
+            text_content: None,
+        }
+    }
+
+    /// Layout a list container (ul or ol) with proper indentation
+    fn layout_list_container(
+        &self,
+        dom: &Dom,
+        stylesheet: &Stylesheet,
+        node_id: NodeId,
+        x: f32,
+        y: f32,
+        containing_width: f32,
+        exclude_tags: &[&str],
+        viewport: &Viewport,
+        font_manager: &mut FontManager,
+        list_depth: usize,
+    ) -> LayoutBox {
+        let tag = get_tag_name(dom, node_id);
+        let style = stylesheet.compute_style_with_viewport(dom, node_id, viewport);
+        let list_type = self.get_list_type(dom, node_id);
+        
+        layout_log(&format!("layout_list_container: <{}> depth={} at ({}, {})", tag, list_depth, x, y));
+        
+        // Default list indentation: 40px (standard browser default)
+        let list_indent = 40.0;
+        
+        // Get any explicit padding from style, or use default
+        let (padding_top, padding_right, padding_bottom, padding_left) = style.get_padding();
+        let effective_padding_left = if padding_left > 0.0 { padding_left } else { list_indent };
+        
+        // Get margins (margin_top/bottom not currently used for list containers)
+        let (_margin_top, margin_right, _margin_bottom, margin_left) = style.get_margin_with_viewport(viewport.height);
+        
+        // Calculate content area
+        let border_box_x = x + margin_left;
+        let border_box_y = y;
+        let content_width = (containing_width - margin_left - margin_right - effective_padding_left - padding_right).max(0.0);
+        let content_x = border_box_x + effective_padding_left;
+        let content_y = border_box_y + padding_top;
+        
+        layout_log(&format!("  list indent: {}, content_x: {}, content_width: {}", effective_padding_left, content_x, content_width));
+        
+        // Layout children (list items)
+        let mut children_boxes = Vec::new();
+        let mut current_y = content_y;
+        let children = dom.nodes[node_id].children.clone();
+        let mut item_index = 0;
+
+        for child_id in children {
+            let child_tag = get_tag_name(dom, child_id);
+            layout_log(&format!("  list_container child: <{}> is_list_item={} is_list_container={} is_block={}",
+                child_tag,
+                self.is_list_item(dom, child_id),
+                self.is_list_container(dom, child_id),
+                self.is_block_element(dom, child_id)));
+            
+            let should_exclude = if let crate::dom::NodeType::Element(el) = &dom.nodes[child_id].node_type {
+                exclude_tags.contains(&el.tag_name.as_str())
+            } else {
+                false
+            };
+
+            if should_exclude {
+                continue;
+            }
+
+            if self.is_list_item(dom, child_id) {
+                item_index += 1;
+                layout_log(&format!("    -> calling layout_list_item for <{}> #{}", child_tag, item_index));
+                let li_box = self.layout_list_item(
+                    dom, stylesheet, child_id,
+                    content_x, current_y, content_width,
+                    exclude_tags, viewport, font_manager,
+                    list_type, item_index, list_depth,
+                );
+                current_y += li_box.dimensions.height;
+                children_boxes.push(li_box);
+            } else if self.is_list_container(dom, child_id) {
+                // Nested list
+                let nested_list = self.layout_list_container(
+                    dom, stylesheet, child_id,
+                    content_x, current_y, content_width,
+                    exclude_tags, viewport, font_manager,
+                    list_depth + 1,
+                );
+                current_y += nested_list.dimensions.height;
+                children_boxes.push(nested_list);
+            } else if self.is_block_element(dom, child_id) {
+                // Other block element inside list (unusual but possible)
+                let child_style = stylesheet.compute_style_with_viewport(dom, child_id, viewport);
+                let (child_mt, _, child_mb, _) = child_style.get_margin_with_viewport(viewport.height);
+                current_y += child_mt;
+                
+                let child_box = self.layout_block_element(
+                    dom, stylesheet, child_id,
+                    content_x, current_y, content_width,
+                    exclude_tags, viewport, font_manager
+                );
+                current_y += child_box.dimensions.height + child_mb;
+                children_boxes.push(child_box);
+            }
+            // Skip non-li inline content in lists (whitespace text nodes, etc.)
+        }
+
+        let content_height = (current_y - content_y).max(0.0);
+        let border_box_height = content_height + padding_top + padding_bottom;
+        let border_box_width = content_width + effective_padding_left + padding_right;
+
+        LayoutBox {
+            node_id,
+            box_type: BoxType::Block,
+            dimensions: Dimensions {
+                x: border_box_x,
+                y: border_box_y,
+                width: border_box_width,
+                height: border_box_height,
+            },
+            style,
+            children: children_boxes,
+            text_content: None,
+        }
+    }
+
+    /// Layout a list item (li) with marker
+    fn layout_list_item(
+        &self,
+        dom: &Dom,
+        stylesheet: &Stylesheet,
+        node_id: NodeId,
+        x: f32,
+        y: f32,
+        containing_width: f32,
+        exclude_tags: &[&str],
+        viewport: &Viewport,
+        font_manager: &mut FontManager,
+        list_type: Option<&str>,
+        item_index: usize,
+        _list_depth: usize,
+    ) -> LayoutBox {
+        let style = stylesheet.compute_style_with_viewport(dom, node_id, viewport);
+        let font_size = style.get_font_size();
+        let font_family = style.get_font_family();
+        let is_bold = style.is_bold();
+        let is_italic = style.is_italic();
+        let line_height = font_size * 1.2;
+        
+        // Generate marker text
+        let marker_text = match list_type {
+            Some("ul") => "•".to_string(),
+            Some("ol") => format!("{}.", item_index),
+            _ => "•".to_string(),
+        };
+        
+        // Measure marker width
+        let marker_width = self.measure_text_width(&marker_text, font_manager, &font_family, font_size, is_bold, is_italic);
+        let marker_spacing = font_size * 0.5; // Space between marker and content
+        let marker_area_width = marker_width + marker_spacing;
+        
+        layout_log(&format!("layout_list_item: item #{} marker='{}' marker_width={:.2}", item_index, marker_text, marker_width));
+        
+        // Position marker to the left of content area (outside)
+        let marker_x = x - marker_area_width;
+        
+        // Content starts at x (marker is outside/before)
+        let content_x = x;
+        let content_y = y;
+        let content_width = containing_width;
+        
+        // Create marker box
+        let marker_box = LayoutBox {
+            node_id,
+            box_type: BoxType::Inline,
+            dimensions: Dimensions {
+                x: marker_x.max(0.0),
+                y: content_y,
+                width: marker_width,
+                height: line_height,
+            },
+            style: style.clone(),
+            children: vec![],
+            text_content: Some(marker_text),
+        };
+        
+        // Layout content (children of li)
+        let mut children_boxes = vec![marker_box];
+        let mut current_y = content_y;
+        let children = dom.nodes[node_id].children.clone();
+        let mut child_idx = 0;
+        let mut first_line = true;
+
+        while child_idx < children.len() {
+            let child_id = children[child_idx];
+            let should_exclude = if let crate::dom::NodeType::Element(el) = &dom.nodes[child_id].node_type {
+                exclude_tags.contains(&el.tag_name.as_str())
+            } else {
+                false
+            };
+
+            if should_exclude {
+                child_idx += 1;
+                continue;
+            }
+
+            if self.is_list_container(dom, child_id) {
+                // Nested list inside li
+                let nested_list = self.layout_list_container(
+                    dom, stylesheet, child_id,
+                    content_x, current_y, content_width,
+                    exclude_tags, viewport, font_manager,
+                    _list_depth + 1,
+                );
+                current_y += nested_list.dimensions.height;
+                children_boxes.push(nested_list);
+                child_idx += 1;
+                first_line = false;
+            } else if self.is_block_element(dom, child_id) {
+                // Block element inside li
+                let child_style = stylesheet.compute_style_with_viewport(dom, child_id, viewport);
+                let (child_mt, _, child_mb, _) = child_style.get_margin_with_viewport(viewport.height);
+                current_y += child_mt;
+                
+                let child_box = self.layout_block_element(
+                    dom, stylesheet, child_id,
+                    content_x, current_y, content_width,
+                    exclude_tags, viewport, font_manager
+                );
+                current_y += child_box.dimensions.height + child_mb;
+                children_boxes.push(child_box);
+                child_idx += 1;
+                first_line = false;
+            } else {
+                // Inline or text content
+                let mut inline_children = vec![child_id];
+                child_idx += 1;
+                
+                while child_idx < children.len() {
+                    let next_id = children[child_idx];
+                    let is_excluded = if let crate::dom::NodeType::Element(el) = &dom.nodes[next_id].node_type {
+                        exclude_tags.contains(&el.tag_name.as_str())
+                    } else {
+                        false
+                    };
+                    
+                    if is_excluded {
+                        child_idx += 1;
+                        continue;
+                    }
+                    
+                    if self.is_block_element(dom, next_id) || self.is_list_container(dom, next_id) {
+                        break;
+                    }
+                    inline_children.push(next_id);
+                    child_idx += 1;
+                }
+
+                let line_box = self.layout_inline_line(
+                    dom, stylesheet, &inline_children,
+                    content_x, current_y, content_width,
+                    exclude_tags, viewport, font_manager
+                );
+                
+                if line_box.dimensions.height > 0.0 {
+                    // Align first line with marker
+                    if first_line {
+                        first_line = false;
+                    }
+                    current_y += line_box.dimensions.height;
+                    children_boxes.push(line_box);
+                }
+            }
+        }
+
+        let total_height = (current_y - content_y).max(line_height);
+
+        LayoutBox {
+            node_id,
+            box_type: BoxType::Block,
+            dimensions: Dimensions {
+                x: content_x,
+                y: content_y,
+                width: content_width,
+                height: total_height,
             },
             style,
             children: children_boxes,
@@ -469,6 +822,12 @@ impl LayoutEngine {
 
         for &child_id in inline_children {
             if let crate::dom::NodeType::Text(text) = &dom.nodes[child_id].node_type {
+                // Skip whitespace-only text nodes
+                if text.trim().is_empty() {
+                    text_log(&format!("  SKIP whitespace-only text node"));
+                    continue;
+                }
+                
                 let style = stylesheet.compute_style_with_viewport(dom, child_id, viewport);
                 let font_size = style.get_font_size();
                 let font_family = style.get_font_family();
@@ -479,6 +838,10 @@ impl LayoutEngine {
                 text_log(&format!("  text node: '{}' font_size={}", text.chars().take(50).collect::<String>(), font_size));
                 
                 let words: Vec<&str> = text.split_whitespace().collect();
+                if words.is_empty() {
+                    text_log(&format!("  SKIP empty words after split"));
+                    continue;
+                }
                 text_log(&format!("  split into {} words: {:?}", words.len(), words));
                 
                 // Measure space width using actual font
@@ -598,6 +961,11 @@ impl LayoutEngine {
                 let child_width = child_box.dimensions.width;
                 let child_height = child_box.dimensions.height;
                 
+                // Skip inline elements with zero dimensions
+                if child_width <= 0.0 && child_height <= 0.0 {
+                    continue;
+                }
+                
                 if current_x + child_width > x + width && current_x > x {
                     total_height += max_height;
                     y += max_height;
@@ -614,12 +982,33 @@ impl LayoutEngine {
         }
 
         total_height += max_height;
+        
+        // Filter out any boxes with zero dimensions
+        let visible_boxes: Vec<_> = line_boxes.into_iter()
+            .filter(|b| b.dimensions.width > 0.0 || b.dimensions.height > 0.0)
+            .collect();
+        
+        // Only create line box if we have visible content
+        if visible_boxes.is_empty() || total_height <= 0.0 {
+            layout_log(&format!("  inline_line: no visible content, returning empty box"));
+            // Return a zero-height box
+            return LayoutBox {
+                node_id: 0,
+                box_type: BoxType::Block,
+                dimensions: Dimensions { x, y: start_y, width: 0.0, height: 0.0 },
+                style: Style::new(),
+                children: vec![],
+                text_content: None,
+            };
+        }
+        
+        layout_log(&format!("  inline_line: {} children, height={}", visible_boxes.len(), total_height));
         LayoutBox {
             node_id: 0,
             box_type: BoxType::Block,
             dimensions: Dimensions { x, y: start_y, width, height: total_height },
             style: Style::new(),
-            children: line_boxes,
+            children: visible_boxes,
             text_content: None,
         }
     }
@@ -640,6 +1029,18 @@ impl LayoutEngine {
 
         match &dom.nodes[node_id].node_type {
             crate::dom::NodeType::Text(text) => {
+                // Skip whitespace-only text nodes
+                if text.trim().is_empty() {
+                    return LayoutBox {
+                        node_id,
+                        box_type: BoxType::Inline,
+                        dimensions: Dimensions { x, y, width: 0.0, height: 0.0 },
+                        style: style.clone(),
+                        children: vec![],
+                        text_content: None,
+                    };
+                }
+                
                 let font_size = style.get_font_size();
                 let line_height = font_size * 1.2;
                 let font_family = style.get_font_family();
@@ -669,7 +1070,7 @@ impl LayoutEngine {
                 } else {
                     let mut children_boxes = Vec::new();
                     let mut current_x = x;
-                    let mut max_height = 16.0_f32;
+                    let mut max_height = 0.0_f32; // Start with 0 height, don't assume 16px
 
                     for &child_id in &dom.nodes[node_id].children {
                         let should_exclude = if let crate::dom::NodeType::Element(el) = &dom.nodes[child_id].node_type {
@@ -681,9 +1082,12 @@ impl LayoutEngine {
                         if !should_exclude {
                             let remaining_width = (x + max_width - current_x).max(0.0);
                             let child_box = self.layout_inline_element(dom, stylesheet, child_id, current_x, y, remaining_width, exclude_tags, viewport, font_manager);
-                            max_height = max_height.max(child_box.dimensions.height);
-                            current_x += child_box.dimensions.width;
-                            children_boxes.push(child_box);
+                            // Only count child if it has content
+                            if child_box.dimensions.width > 0.0 || child_box.dimensions.height > 0.0 {
+                                max_height = max_height.max(child_box.dimensions.height);
+                                current_x += child_box.dimensions.width;
+                                children_boxes.push(child_box);
+                            }
                         }
                     }
 

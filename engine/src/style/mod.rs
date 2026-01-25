@@ -587,57 +587,130 @@ impl Stylesheet {
     /// Apply default user agent styles for each element type
     fn apply_default_styles(&self, style: &mut Style, tag_name: &str) {
         match tag_name {
+            // Hyperlink
             "a" => {
                 style.properties.insert("color".to_string(), "#0000ff".to_string());
                 style.properties.insert("text-decoration".to_string(), "underline".to_string());
             }
+            // Text formatting
             "b" | "strong" => {
                 style.properties.insert("font-weight".to_string(), "bold".to_string());
             }
             "i" | "em" => {
                 style.properties.insert("font-style".to_string(), "italic".to_string());
             }
-            "h1" => {
-                style.properties.insert("font-size".to_string(), "2em".to_string());
-                style.properties.insert("font-weight".to_string(), "bold".to_string());
-                style.properties.insert("margin".to_string(), "0.67em 0".to_string());
-            }
-            "h2" => {
-                style.properties.insert("font-size".to_string(), "1.5em".to_string());
-                style.properties.insert("font-weight".to_string(), "bold".to_string());
-                style.properties.insert("margin".to_string(), "0.75em 0".to_string());
-            }
-            "h3" => {
-                style.properties.insert("font-size".to_string(), "1.17em".to_string());
-                style.properties.insert("font-weight".to_string(), "bold".to_string());
-                style.properties.insert("margin".to_string(), "0.83em 0".to_string());
-            }
-            "h4" => {
-                style.properties.insert("font-size".to_string(), "1em".to_string());
-                style.properties.insert("font-weight".to_string(), "bold".to_string());
-                style.properties.insert("margin".to_string(), "1em 0".to_string());
-            }
-            "h5" => {
-                style.properties.insert("font-size".to_string(), "0.83em".to_string());
-                style.properties.insert("font-weight".to_string(), "bold".to_string());
-                style.properties.insert("margin".to_string(), "1.17em 0".to_string());
-            }
-            "h6" => {
-                style.properties.insert("font-size".to_string(), "0.67em".to_string());
-                style.properties.insert("font-weight".to_string(), "bold".to_string());
-                style.properties.insert("margin".to_string(), "1.33em 0".to_string());
-            }
-            "p" => {
-                style.properties.insert("margin".to_string(), "1em 0".to_string());
-            }
-            "code" | "pre" => {
-                style.properties.insert("font-family".to_string(), "monospace".to_string());
-            }
             "u" => {
                 style.properties.insert("text-decoration".to_string(), "underline".to_string());
             }
             "s" | "del" => {
                 style.properties.insert("text-decoration".to_string(), "line-through".to_string());
+            }
+            "code" => {
+                style.properties.insert("font-family".to_string(), "monospace".to_string());
+            }
+            "pre" => {
+                style.properties.insert("font-family".to_string(), "monospace".to_string());
+                style.properties.insert("margin".to_string(), "1em 0.5em".to_string());
+            }
+            // Headings - per HTML spec default margins
+            "h1" => {
+                style.properties.insert("font-size".to_string(), "2em".to_string());
+                style.properties.insert("font-weight".to_string(), "bold".to_string());
+                style.properties.insert("margin".to_string(), "0.3em 0.5em".to_string());
+            }
+            "h2" => {
+                style.properties.insert("font-size".to_string(), "1.5em".to_string());
+                style.properties.insert("font-weight".to_string(), "bold".to_string());
+                style.properties.insert("margin".to_string(), "0.25em 0.5em".to_string());
+            }
+            "h3" => {
+                style.properties.insert("font-size".to_string(), "1.17em".to_string());
+                style.properties.insert("font-weight".to_string(), "bold".to_string());
+                style.properties.insert("margin".to_string(), "0.2em 0.5em".to_string());
+            }
+            "h4" => {
+                style.properties.insert("font-size".to_string(), "1em".to_string());
+                style.properties.insert("font-weight".to_string(), "bold".to_string());
+                style.properties.insert("margin".to_string(), "0.2em 0.5em".to_string());
+            }
+            "h5" => {
+                style.properties.insert("font-size".to_string(), "0.83em".to_string());
+                style.properties.insert("font-weight".to_string(), "bold".to_string());
+                style.properties.insert("margin".to_string(), "0.2em 0.5em".to_string());
+            }
+            "h6" => {
+                style.properties.insert("font-size".to_string(), "0.67em".to_string());
+                style.properties.insert("font-weight".to_string(), "bold".to_string());
+                style.properties.insert("margin".to_string(), "0.2em 0.5em".to_string());
+            }
+            // Paragraph
+            "p" => {
+                style.properties.insert("margin".to_string(), "0.3em 0.5em".to_string());
+            }
+            // Lists - with horizontal margins and left padding for indentation
+            "ul" | "ol" => {
+                style.properties.insert("margin".to_string(), "0.3em 0.5em".to_string());
+                style.properties.insert("padding-left".to_string(), "40px".to_string());
+            }
+            "li" => {
+                // li typically has no margin by default, inherits from ul/ol
+                style.properties.insert("margin".to_string(), "0".to_string());
+            }
+            "dl" => {
+                style.properties.insert("margin".to_string(), "0.3em 0.5em".to_string());
+            }
+            "dt" => {
+                // Definition term - bold
+                style.properties.insert("font-weight".to_string(), "bold".to_string());
+            }
+            "dd" => {
+                // Definition data - indented with left margin
+                style.properties.insert("margin-left".to_string(), "2em".to_string());
+            }
+            // Block elements - blockquote with left margin
+            "blockquote" => {
+                style.properties.insert("margin".to_string(), "0.3em 0 0.3em 2em".to_string());
+            }
+            "hr" => {
+                style.properties.insert("margin".to_string(), "0.3em 0.5em".to_string());
+                style.properties.insert("border".to_string(), "1px solid #ccc".to_string());
+            }
+            "address" => {
+                style.properties.insert("margin".to_string(), "0.3em 0.5em".to_string());
+                style.properties.insert("font-style".to_string(), "italic".to_string());
+            }
+            // HTML5 semantic elements - minimal/no margins
+            "article" | "aside" | "section" | "header" | "footer" | "nav" | "main" => {
+                style.properties.insert("margin".to_string(), "0".to_string());
+            }
+            "figure" => {
+                // Figures have left/right margins for visual separation
+                style.properties.insert("margin".to_string(), "0.3em 2em".to_string());
+            }
+            "figcaption" => {
+                style.properties.insert("font-style".to_string(), "italic".to_string());
+                style.properties.insert("margin".to_string(), "0".to_string());
+            }
+            // Form elements
+            "form" => {
+                style.properties.insert("margin".to_string(), "0.3em 0.5em".to_string());
+            }
+            "fieldset" => {
+                style.properties.insert("margin".to_string(), "0.3em 0.5em".to_string());
+                style.properties.insert("padding".to_string(), "0.5em".to_string());
+                style.properties.insert("border".to_string(), "1px solid #ccc".to_string());
+            }
+            "legend" => {
+                style.properties.insert("padding".to_string(), "0 0.25em".to_string());
+            }
+            // Table elements
+            "table" => {
+                style.properties.insert("margin".to_string(), "0.3em 0.5em".to_string());
+                style.properties.insert("border-collapse".to_string(), "collapse".to_string());
+            }
+            // Body element
+            "body" => {
+                style.properties.insert("margin".to_string(), "8px".to_string());
             }
             _ => {
                 // No specific defaults for other elements
